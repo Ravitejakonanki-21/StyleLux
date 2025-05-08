@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockClothingItems, ClothingCategory, ClothingItem } from '@/types/clothing';
+import { ClothingCategory, ClothingItem } from '@/types/clothing';
 import ClothingCard from '@/components/ClothingCard';
 import { Camera, Download, Image, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useClothing } from '@/contexts/ClothingContext';
 
 const TryOn: React.FC = () => {
+  const { clothingItems } = useClothing();
   const [modelImage, setModelImage] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<ClothingCategory, ClothingItem | null>>({
     tops: null,
@@ -22,7 +24,7 @@ const TryOn: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   const filteredItems = (category: ClothingCategory) => {
-    return mockClothingItems.filter(item => item.category === category);
+    return clothingItems.filter(item => item.category === category);
   };
   
   const handleSelectItem = (item: ClothingItem) => {
@@ -189,36 +191,45 @@ const TryOn: React.FC = () => {
               <CardContent className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Select Clothes to Try On</h2>
                 
-                <Tabs defaultValue="tops">
-                  <TabsList className="bg-fashion-light mb-4">
+                {clothingItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-closet-600 mb-4">Your closet is empty. Add some clothes to try them on.</p>
+                    <a href="/upload" className="inline-flex items-center px-4 py-2 bg-closet-700 text-white rounded-md hover:bg-closet-800 transition-colors">
+                      Add Your First Item
+                    </a>
+                  </div>
+                ) : (
+                  <Tabs defaultValue="tops">
+                    <TabsList className="bg-fashion-light mb-4">
+                      {categories.map(category => (
+                        <TabsTrigger key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    
                     {categories.map(category => (
-                      <TabsTrigger key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </TabsTrigger>
+                      <TabsContent key={category} value={category}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {filteredItems(category).map(item => (
+                            <ClothingCard 
+                              key={item.id} 
+                              item={item}
+                              onClick={() => handleSelectItem(item)}
+                              className={selectedItems[category]?.id === item.id ? 'ring-2 ring-closet-700' : ''}
+                            />
+                          ))}
+                          
+                          {filteredItems(category).length === 0 && (
+                            <div className="col-span-full text-center py-8 text-closet-500">
+                              No {category} found in your closet
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
                     ))}
-                  </TabsList>
-                  
-                  {categories.map(category => (
-                    <TabsContent key={category} value={category}>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {filteredItems(category).map(item => (
-                          <ClothingCard 
-                            key={item.id} 
-                            item={item}
-                            onClick={() => handleSelectItem(item)}
-                            className={selectedItems[category]?.id === item.id ? 'ring-2 ring-closet-700' : ''}
-                          />
-                        ))}
-                        
-                        {filteredItems(category).length === 0 && (
-                          <div className="col-span-full text-center py-8 text-closet-500">
-                            No {category} found in your closet
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                  </Tabs>
+                )}
               </CardContent>
             </Card>
           </div>

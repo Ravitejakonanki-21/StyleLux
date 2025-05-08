@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { ClothingItem, mockClothingItems } from '@/types/clothing';
+import { ClothingItem } from '@/types/clothing';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ClothingContextType {
@@ -12,7 +12,7 @@ interface ClothingContextType {
 const ClothingContext = createContext<ClothingContextType | undefined>(undefined);
 
 export const ClothingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [clothingItems, setClothingItems] = useState<ClothingItem[]>(mockClothingItems);
+  const [clothingItems, setClothingItems] = useState<ClothingItem[]>([]);
 
   const addClothingItem = (item: Omit<ClothingItem, 'id' | 'dateAdded'>) => {
     const newItem: ClothingItem = {
