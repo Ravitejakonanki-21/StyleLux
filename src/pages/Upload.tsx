@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Image, Check } from 'lucide-react';
+import { Upload as UploadIcon, Image, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { ClothingCategory, ClothingColor, ClothingOccasion, ClothingSeason } from '@/types/clothing';
 import { useClothing } from '@/contexts/ClothingContext';
@@ -44,35 +43,13 @@ const UploadPage: React.FC = () => {
       setImagePreview(imageUrl);
       setIsUploading(false);
       
-      // Simulate AI categorization
+      // Go directly to step 2 after image is loaded
       setTimeout(() => {
-        setIsLoading(true);
-        simulateAIProcessing(imageUrl);
+        setIsLoading(false);
+        setStep(2);
       }, 500);
     };
     reader.readAsDataURL(file);
-  };
-  
-  const simulateAIProcessing = (imageUrl: string) => {
-    // Simulate AI processing time
-    setTimeout(() => {
-      setFormData({
-        name: 'Blue Denim Jacket',
-        category: 'outerwear',
-        colors: ['blue'],
-        seasons: ['spring', 'fall'],
-        occasions: ['casual'],
-        notes: ''
-      });
-      
-      setIsLoading(false);
-      setStep(2);
-      
-      toast({
-        title: "AI Analysis Complete",
-        description: "We've analyzed your item and suggested some categories.",
-      });
-    }, 2000);
   };
   
   const handleSave = () => {
@@ -80,6 +57,25 @@ const UploadPage: React.FC = () => {
       toast({
         title: "Error",
         description: "No image was uploaded.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.name) {
+      toast({
+        title: "Error",
+        description: "Please provide a name for your item.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.category) {
+      toast({
+        title: "Error",
+        description: "Please select a category for your item.",
         variant: "destructive",
       });
       return;
@@ -93,6 +89,16 @@ const UploadPage: React.FC = () => {
       colors: formData.colors.length > 0 ? formData.colors : ['blue'], // Default if no colors selected
       seasons: formData.seasons.length > 0 ? formData.seasons : ['all-season'], // Default if no seasons selected
       occasions: formData.occasions.length > 0 ? formData.occasions : ['casual'], // Default if no occasions selected
+      favorite: false
+    });
+
+    console.log('Item saved:', {
+      imageUrl: imagePreview,
+      name: formData.name,
+      category: formData.category,
+      colors: formData.colors.length > 0 ? formData.colors : ['blue'],
+      seasons: formData.seasons.length > 0 ? formData.seasons : ['all-season'],
+      occasions: formData.occasions.length > 0 ? formData.occasions : ['casual'],
       favorite: false
     });
 
@@ -207,7 +213,7 @@ const UploadPage: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <Image className="h-16 w-16 text-closet-500 mb-4" />
+                        <UploadIcon className="h-16 w-16 text-closet-500 mb-4" />
                         <p className="text-closet-600 mb-2">Drag and drop your image here or click to browse</p>
                         <p className="text-closet-500 text-sm">JPG, PNG or WEBP (max. 5MB)</p>
                       </>
@@ -232,7 +238,7 @@ const UploadPage: React.FC = () => {
             <CardContent className="p-6">
               <div className="text-center mb-6">
                 <h2 className="text-xl font-semibold mb-2">Edit Item Details</h2>
-                <p className="text-closet-600">Confirm or update the AI-suggested information</p>
+                <p className="text-closet-600">Enter information about your clothing item</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -253,6 +259,8 @@ const UploadPage: React.FC = () => {
                       id="name" 
                       value={formData.name} 
                       onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                      placeholder="E.g., Blue Denim Jacket"
+                      required
                     />
                   </div>
                   
@@ -353,8 +361,8 @@ const UploadPage: React.FC = () => {
               <h2 className="text-2xl font-semibold mb-2">Item Added Successfully!</h2>
               <p className="text-closet-600 mb-6">Your item has been added to your virtual closet.</p>
               <div className="flex flex-col sm:flex-row justify-center gap-3">
-                <Button asChild variant="outline">
-                  <a href="/closet">View My Closet</a>
+                <Button onClick={() => navigate("/closet")} variant="outline">
+                  View My Closet
                 </Button>
                 <Button onClick={() => {
                   setStep(1);

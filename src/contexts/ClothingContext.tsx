@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ClothingItem } from '@/types/clothing';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -9,10 +9,22 @@ interface ClothingContextType {
   toggleFavorite: (id: string) => void;
 }
 
+const STORAGE_KEY = 'closet_clothing_items';
+
 const ClothingContext = createContext<ClothingContextType | undefined>(undefined);
 
 export const ClothingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [clothingItems, setClothingItems] = useState<ClothingItem[]>([]);
+  const [clothingItems, setClothingItems] = useState<ClothingItem[]>(() => {
+    // Try to load items from localStorage on initial render
+    const savedItems = localStorage.getItem(STORAGE_KEY);
+    return savedItems ? JSON.parse(savedItems) : [];
+  });
+
+  // Save to localStorage whenever clothingItems changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(clothingItems));
+    console.log('Saved items to storage:', clothingItems);
+  }, [clothingItems]);
 
   const addClothingItem = (item: Omit<ClothingItem, 'id' | 'dateAdded'>) => {
     const newItem: ClothingItem = {
@@ -21,6 +33,7 @@ export const ClothingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       dateAdded: new Date().toISOString(),
     };
 
+    console.log('Adding new item:', newItem);
     setClothingItems(prev => [newItem, ...prev]);
   };
 
