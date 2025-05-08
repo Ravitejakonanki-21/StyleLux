@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Upload, Image, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { ClothingCategory, ClothingColor, ClothingOccasion, ClothingSeason } from '@/types/clothing';
+import { useClothing } from '@/contexts/ClothingContext';
 
 const UploadPage: React.FC = () => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -17,6 +19,8 @@ const UploadPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { addClothingItem } = useClothing();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -36,19 +40,20 @@ const UploadPage: React.FC = () => {
     // Create image preview
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result as string);
+      const imageUrl = reader.result as string;
+      setImagePreview(imageUrl);
       setIsUploading(false);
       
       // Simulate AI categorization
       setTimeout(() => {
         setIsLoading(true);
-        simulateAIProcessing();
+        simulateAIProcessing(imageUrl);
       }, 500);
     };
     reader.readAsDataURL(file);
   };
   
-  const simulateAIProcessing = () => {
+  const simulateAIProcessing = (imageUrl: string) => {
     // Simulate AI processing time
     setTimeout(() => {
       setFormData({
@@ -71,11 +76,79 @@ const UploadPage: React.FC = () => {
   };
   
   const handleSave = () => {
-    // Simulate saving
+    if (!imagePreview) {
+      toast({
+        title: "Error",
+        description: "No image was uploaded.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add the clothing item to our context
+    addClothingItem({
+      imageUrl: imagePreview,
+      name: formData.name,
+      category: formData.category,
+      colors: formData.colors.length > 0 ? formData.colors : ['blue'], // Default if no colors selected
+      seasons: formData.seasons.length > 0 ? formData.seasons : ['all-season'], // Default if no seasons selected
+      occasions: formData.occasions.length > 0 ? formData.occasions : ['casual'], // Default if no occasions selected
+      favorite: false
+    });
+
     setStep(3);
+    
     toast({
       title: "Item Added Successfully",
       description: "Your clothing item has been added to your closet.",
+    });
+  };
+
+  const handleColorChange = (color: ClothingColor) => {
+    setFormData(prev => {
+      if (prev.colors.includes(color)) {
+        return {
+          ...prev,
+          colors: prev.colors.filter(c => c !== color)
+        };
+      } else {
+        return {
+          ...prev,
+          colors: [...prev.colors, color]
+        };
+      }
+    });
+  };
+
+  const handleSeasonChange = (season: ClothingSeason) => {
+    setFormData(prev => {
+      if (prev.seasons.includes(season)) {
+        return {
+          ...prev,
+          seasons: prev.seasons.filter(s => s !== season)
+        };
+      } else {
+        return {
+          ...prev,
+          seasons: [...prev.seasons, season]
+        };
+      }
+    });
+  };
+
+  const handleOccasionChange = (occasion: ClothingOccasion) => {
+    setFormData(prev => {
+      if (prev.occasions.includes(occasion)) {
+        return {
+          ...prev,
+          occasions: prev.occasions.filter(o => o !== occasion)
+        };
+      } else {
+        return {
+          ...prev,
+          occasions: [...prev.occasions, occasion]
+        };
+      }
     });
   };
   
@@ -203,7 +276,51 @@ const UploadPage: React.FC = () => {
                     </Select>
                   </div>
                   
-                  {/* Additional fields would go here for colors, seasons, occasions */}
+                  <div>
+                    <Label>Colors</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {(['black', 'white', 'gray', 'brown', 'beige', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'] as ClothingColor[]).map((color) => (
+                        <div
+                          key={color}
+                          className={`p-2 border rounded-md cursor-pointer flex items-center gap-2 ${formData.colors.includes(color) ? 'bg-blue-50 border-blue-300' : 'border-gray-200'}`}
+                          onClick={() => handleColorChange(color)}
+                        >
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }}></div>
+                          <span className="text-sm capitalize">{color}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Seasons</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {(['spring', 'summer', 'fall', 'winter', 'all-season'] as ClothingSeason[]).map((season) => (
+                        <div
+                          key={season}
+                          className={`p-2 border rounded-md cursor-pointer ${formData.seasons.includes(season) ? 'bg-blue-50 border-blue-300' : 'border-gray-200'}`}
+                          onClick={() => handleSeasonChange(season)}
+                        >
+                          <span className="text-sm capitalize">{season}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Occasions</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {(['casual', 'formal', 'business', 'athletic', 'special'] as ClothingOccasion[]).map((occasion) => (
+                        <div
+                          key={occasion}
+                          className={`p-2 border rounded-md cursor-pointer ${formData.occasions.includes(occasion) ? 'bg-blue-50 border-blue-300' : 'border-gray-200'}`}
+                          onClick={() => handleOccasionChange(occasion)}
+                        >
+                          <span className="text-sm capitalize">{occasion}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   
                   <div>
                     <Label htmlFor="notes">Notes</Label>
@@ -239,7 +356,18 @@ const UploadPage: React.FC = () => {
                 <Button asChild variant="outline">
                   <a href="/closet">View My Closet</a>
                 </Button>
-                <Button onClick={() => setStep(1)}>Add Another Item</Button>
+                <Button onClick={() => {
+                  setStep(1);
+                  setImagePreview(null);
+                  setFormData({
+                    name: '',
+                    category: '' as ClothingCategory,
+                    colors: [] as ClothingColor[],
+                    seasons: [] as ClothingSeason[],
+                    occasions: [] as ClothingOccasion[],
+                    notes: ''
+                  });
+                }}>Add Another Item</Button>
               </div>
             </CardContent>
           </Card>
