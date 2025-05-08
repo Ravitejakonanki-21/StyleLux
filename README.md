@@ -1,4 +1,4 @@
-# Welcome to your Wardrobe Vision AR Stylist project
+# Welcome to your StyleLux project
 
 ## Project info
 
